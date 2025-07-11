@@ -1,0 +1,10 @@
+<IfModule mod_headers.c>
+  # 移除不需要的头部
+  Header unset Expires
+  Header unset X-XSS-Protection
+  
+  # 设置静态资源缓存
+  <FilesMatch "\.(js|css|png|jpg|html)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
