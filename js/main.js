@@ -7,9 +7,12 @@ let book, pages, prevBtn, nextBtn, pageIndicator;
 let currentPage = 0;
 let isAnimating = false;
 let ignoreHashChange = false; // 新增标志位
+let isInitializing = true;
+let isProcessingHashChange = false;
 
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化元素引用
+    loadLastPage();
+    // 1. 初始化元素引用
     book = document.querySelector('.flip-book');
     if (book) {
         pages = document.querySelectorAll('.flip-page');
@@ -17,46 +20,99 @@ document.addEventListener('DOMContentLoaded', function() {
         nextBtn = document.querySelector('.next-page');
         pageIndicator = document.querySelector('.page-indicator');
         
+        // 2. 初始化翻书功能
         initFlipBook();
     }
 
-    // 初始化加载
-    if (!window.location.hash) {
-        window.location.hash = '#part1';
-    } else {
-        loadContent();
+    // 3. 加载上次浏览的页面（如果有）
+    const lastViewedPage = localStorage.getItem('lastViewedPage');
+    const initialSection = lastViewedPage || '#part1';
+    
+    // 4. 初始化当前页（不触发hashchange）
+    ignoreHashChange = true;
+    window.location.hash = initialSection;
+    initCurrentPage();
+    
+    // 5. 设置初始化完成标志
+    setTimeout(() => {
+        isInitializing = false;
+        ignoreHashChange = false;
+    }, 500);
+
+    // 6. 其他初始化
+    setupMobileMenu();
+    setupDarkMode();
+});
+
+window.addEventListener('hashchange', () => {
+    saveCurrentPage();
+    // 1. 忽略程序控制的hash变化
+    if (ignoreHashChange || isProcessingHashChange) {
+        ignoreHashChange = false;
+        return;
     }
-    
-    // 修改hashchange事件监听
-    window.addEventListener('hashchange', () => {
-        if (ignoreHashChange) return;
-    
-        const section = window.location.hash.substring(1);
-        if (!sections.includes(section)) return;
-    
-        const newPage = Array.from(pages).findIndex(page => 
+
+    // 2. 防止重复处理
+    if (isAnimating) return;
+    isProcessingHashChange = true;
+
+    // 3. 获取目标章节
+    const section = window.location.hash.substring(1);
+    if (!sections.includes(section)) {
+        isProcessingHashChange = false;
+        return;
+    }
+
+    // 4. 查找对应页面索引
+    const newPage = Array.from(pages).findIndex(page => 
         page.getAttribute('data-section') === section
-        );
+    );
+
+    // 5. 如果需要跳转页面
+    if (newPage !== -1 && newPage !== currentPage) {
+        currentPage = newPage;
+        
+        // 6. 更新页面状态
+        updateButtons();
+        updatePageIndicator();
+        
+        // 7. 执行翻页动画
+        flipToPage(newPage, () => {
+            isProcessingHashChange = false;
+            localStorage.setItem('lastViewedPage', `#${section}`);
+        });
+    } else {
+        isProcessingHashChange = false;
+    }
+});
+
+// 新增的翻页函数
+function flipToPage(targetPage, callback) {
+    if (isAnimating) return;
+    isAnimating = true;
     
-        if (newPage !== -1 && newPage !== currentPage) {
-            currentPage = newPage;
-            updateButtons();
-            updatePageIndicator();
-        
-            // 重置页面状态
-            pages.forEach((page, index) => {
-                if (index < currentPage) {
-                    page.classList.remove('flipping');
-                } else if (index > currentPage) {
-                    page.classList.add('flipping');
-                }
-            });
-        
-            // 强制加载内容
-            loadContent(section);
+    // 计算翻页方向
+    const direction = targetPage > currentPage ? 'next' : 'prev';
+    
+    // 执行动画
+    pages.forEach((page, index) => {
+        if (direction === 'next') {
+            if (index < targetPage) page.classList.remove('flipping');
+            else if (index > currentPage) page.classList.add('flipping');
+        } else {
+            if (index > targetPage) page.classList.add('flipping');
+            else if (index < currentPage) page.classList.remove('flipping');
         }
     });
-});
+    
+    // 加载内容
+    const section = pages[targetPage].getAttribute('data-section');
+    loadContent(section).then(() => {
+        currentPage = targetPage;
+        updateAfterFlip();
+        if (callback) callback();
+    });
+}
 
 // 核心功能函数
 // 修改loadContent函数，确保强制加载
@@ -224,34 +280,21 @@ function initCurrentPage() {
     const hash = window.location.hash.substring(1);
     const initialSection = hash || 'part1';
     
+    // 如果是初始化且无hash，不修改URL
+    if (!hash && isInitializing) {
+        initialSection = 'part1';
+    } else if (!hash) {
+        window.location.hash = '#part1';
+        return;
+    }
+
     currentPage = Array.from(pages).findIndex(page => 
         page.getAttribute('data-section') === initialSection
     );
     
-    if (currentPage === -1) currentPage = 1; // 默认从part1开始
+    if (currentPage === -1) currentPage = 1;
     
-    // 初始化页面状态
-    pages.forEach((page, index) => {
-        if (index < currentPage && index > 0) { // 跳过封面页
-            page.classList.remove('flipping');
-            page.style.transform = 'rotateY(0deg)';
-        } else if (index > currentPage) {
-            page.classList.add('flipping');
-            page.style.transform = 'rotateY(180deg)';
-        }
-    });
-    
-    // 加载当前页内容
-    loadContent(initialSection).then(() => {
-        updateButtons();
-        updatePageIndicator();
-        // 预加载所有其他章节
-        sections.forEach(section => {
-            if (section !== initialSection) {
-                preloadChapter(section);
-            }
-        });
-    });
+    updateAfterFlip(true); // 新增参数表示初始化
 }
 
 // 修改flipPage函数
@@ -292,11 +335,15 @@ function flipPage(direction) {
 
 
 // 修改updateAfterFlip函数
-function updateAfterFlip() {
+function updateAfterFlip(isInitialLoad = false) {
     const currentPageEl = pages[currentPage];
     const section = currentPageEl.getAttribute('data-section');
-    const coverPage = document.querySelector('[data-section="cover"]');
     
+    // 初始化时不修改历史记录
+    if (!isInitialLoad) {
+        ignoreHashChange = true;
+        history.replaceState(null, null, `#${section}`);
+    }
     // 更新所有内容页状态
     pages.forEach((page, index) => {
         if (page === coverPage) return; // 跳过封面页
@@ -452,3 +499,13 @@ function checkOrientation() {
 window.addEventListener('load', checkOrientation);
 window.addEventListener('resize', checkOrientation);
 
+function saveCurrentPage() {
+    localStorage.setItem('lastViewedPage', window.location.hash);
+}
+
+function loadLastPage() {
+    const lastPage = localStorage.getItem('lastViewedPage');
+    if (lastPage && sections.includes(lastPage.substring(1))) {
+        window.location.hash = lastPage;
+    }
+}
