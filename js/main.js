@@ -414,3 +414,40 @@ function setupHeartbeatAnimation() {
     });
 }
 
+// 防止滑动返回
+let startX, startY;
+
+document.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].pageX;
+    startY = e.touches[0].pageY;
+}, { passive: true });
+
+document.addEventListener('touchmove', function(e) {
+    const moveX = e.touches[0].pageX;
+    const moveY = e.touches[0].pageY;
+    
+    // 判断是否为横向滑动
+    if (Math.abs(moveX - startX) > Math.abs(moveY - startY)) {
+        // 如果是横向滑动，阻止默认行为
+        e.preventDefault();
+    }
+}, { passive: false });
+
+// 检测屏幕方向
+function checkOrientation() {
+  if (window.innerHeight > window.innerWidth) {
+    // 竖屏状态
+    alert("请将设备旋转至横屏模式");
+    // 或者显示一个全屏提示
+    document.querySelector('.rotate-message').style.display = 'flex';
+    document.querySelector('.content').style.display = 'none';
+  } else {
+    // 横屏状态
+    document.querySelector('.rotate-message').style.display = 'none';
+    document.querySelector('.content').style.display = 'block';
+  }
+}
+
+// 初始检查和窗口大小变化时检查
+window.addEventListener('load', checkOrientation);
+window.addEventListener('resize', checkOrientation);
