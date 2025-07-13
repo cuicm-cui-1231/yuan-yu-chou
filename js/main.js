@@ -278,7 +278,7 @@ function initPages() {
 // 修改初始化部分
 function initCurrentPage() {
     const hash = window.location.hash.substring(1);
-    const initialSection = hash || 'part1';
+    let initialSection = hash || 'part1';
     
     // 如果是初始化且无hash，不修改URL
     if (!hash && isInitializing) {
