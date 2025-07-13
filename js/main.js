@@ -451,3 +451,4 @@ function checkOrientation() {
 // 初始检查和窗口大小变化时检查
 window.addEventListener('load', checkOrientation);
 window.addEventListener('resize', checkOrientation);
+
