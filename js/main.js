@@ -9,6 +9,7 @@ let isAnimating = false;
 let ignoreHashChange = false; // 新增标志位
 let isInitializing = true;
 let isProcessingHashChange = false;
+let coverPage;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadLastPage();
@@ -247,6 +248,7 @@ async function preloadChapter(section) {
 // 翻书功能
 function initFlipBook() {
     initPages();
+    coverPage = document.querySelector('[data-section="cover"]')
     initCurrentPage();
     updateButtons();
     
