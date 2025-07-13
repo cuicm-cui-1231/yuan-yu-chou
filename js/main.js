@@ -432,3 +432,22 @@ document.addEventListener('touchmove', function(e) {
         e.preventDefault();
     }
 }, { passive: false });
+
+// 检测屏幕方向
+function checkOrientation() {
+  if (window.innerHeight > window.innerWidth) {
+    // 竖屏状态
+    alert("请将设备旋转至横屏模式");
+    // 或者显示一个全屏提示
+    document.querySelector('.rotate-message').style.display = 'flex';
+    document.querySelector('.content').style.display = 'none';
+  } else {
+    // 横屏状态
+    document.querySelector('.rotate-message').style.display = 'none';
+    document.querySelector('.content').style.display = 'block';
+  }
+}
+
+// 初始检查和窗口大小变化时检查
+window.addEventListener('load', checkOrientation);
+window.addEventListener('resize', checkOrientation);
