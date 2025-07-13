@@ -414,3 +414,21 @@ function setupHeartbeatAnimation() {
     });
 }
 
+// 防止滑动返回
+let startX, startY;
+
+document.addEventListener('touchstart', function(e) {
+    startX = e.touches[0].pageX;
+    startY = e.touches[0].pageY;
+}, { passive: true });
+
+document.addEventListener('touchmove', function(e) {
+    const moveX = e.touches[0].pageX;
+    const moveY = e.touches[0].pageY;
+    
+    // 判断是否为横向滑动
+    if (Math.abs(moveX - startX) > Math.abs(moveY - startY)) {
+        // 如果是横向滑动，阻止默认行为
+        e.preventDefault();
+    }
+}, { passive: false });
