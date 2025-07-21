@@ -12,35 +12,36 @@ let isProcessingHashChange = false;
 let coverPage;
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadLastPage();
-    // 1. 初始化元素引用
+    // 先初始化DOM引用
     book = document.querySelector('.flip-book');
-    if (book) {
-        pages = document.querySelectorAll('.flip-page');
-        prevBtn = document.querySelector('.prev-page');
-        nextBtn = document.querySelector('.next-page');
-        pageIndicator = document.querySelector('.page-indicator');
-        
-        // 2. 初始化翻书功能
-        initFlipBook();
-    }
-
-    // 3. 加载上次浏览的页面（如果有）
-    const lastViewedPage = localStorage.getItem('lastViewedPage');
-    const initialSection = lastViewedPage || '#part1';
+    if (!book) return;
     
-    // 4. 初始化当前页（不触发hashchange）
+    pages = document.querySelectorAll('.flip-page');
+    prevBtn = document.querySelector('.prev-page');
+    nextBtn = document.querySelector('.next-page');
+    pageIndicator = document.querySelector('.page-indicator');
+    coverPage = document.querySelector('[data-section="cover"]');
+    
+    // 初始化翻书功能
+    initFlipBook();
+    
+    // 加载上次浏览的页面或默认页面
+    const lastPage = localStorage.getItem('lastViewedPage');
+    const initialSection = lastPage && sections.includes(lastPage.substring(1)) ? lastPage : '#part1';
+    
     ignoreHashChange = true;
     window.location.hash = initialSection;
     initCurrentPage();
     
-    // 5. 设置初始化完成标志
+    // 设置初始化完成标志
     setTimeout(() => {
         isInitializing = false;
         ignoreHashChange = false;
-    }, 500);
-
-    // 6. 其他初始化
+        // 强制加载当前页内容
+        loadContent(initialSection.substring(1));
+    }, 300);
+    
+    // 其他初始化
     setupMobileMenu();
     setupDarkMode();
 });
@@ -133,30 +134,11 @@ async function loadContent(sectionId) {
         pageContent.innerHTML = '<div class="loading-spinner">加载中...</div>';
         
         // 尝试获取真实内容
-        let html;
-        try {
-            const response = await fetch(`./chapters/${section}.html?t=${Date.now()}`, {
-                cache: 'no-store',
-                mode: 'no-cors'
-            });
-            
-            if (!response.ok) throw new Error('HTTP错误');
-            html = await response.text();
-            
-            // 如果内容为空，使用备用内容
-            if (!html.trim()) {
-                throw new Error('内容为空');
-            }
-        } catch (fetchError) {
-            console.warn(`使用临时内容替代 ${section}`, fetchError);
-            html = `
-                <div class="chapter-content">
-                    <h2>${section}</h2>
-                    <p>本章节内容正在建设中...</p>
-                    <p>最后尝试加载时间: ${new Date().toLocaleString()}</p>
-                    <button onclick="loadContent('${section}')">重试加载</button>
-                </div>
-            `;
+        let html = await tryFetchContent(section);
+        
+        // 如果获取失败，使用备用内容
+        if (!html) {
+            html = generateFallbackContent(section);
         }
         
         // 更新DOM
@@ -165,10 +147,46 @@ async function loadContent(sectionId) {
         
         return true;
     } catch (error) {
-        console.error(`加载 ${section} 最终失败:`, error);
-        showErrorState(section, '加载内容失败: ' + error.message);
+        console.error(`加载 ${section} 失败:`, error);
+        pageContent.innerHTML = generateErrorContent(section, error);
         return false;
     }
+}
+
+async function tryFetchContent(section) {
+    try {
+        const response = await fetch(`./chapters/${section}.html?t=${Date.now()}`, {
+            cache: 'no-store',
+            mode: 'no-cors'
+        });
+        
+        if (!response.ok) throw new Error('HTTP错误');
+        const html = await response.text();
+        return html.trim() ? html : null;
+    } catch (error) {
+        console.warn(`无法加载 ${section}.html`, error);
+        return null;
+    }
+}
+
+function generateFallbackContent(section) {
+    return `
+        <div class="chapter-content">
+            <h2>${section}</h2>
+            <p>本章节内容正在建设中...</p>
+            <p>最后更新时间: ${new Date().toLocaleString()}</p>
+        </div>
+    `;
+}
+
+function generateErrorContent(section, error) {
+    return `
+        <div class="error-state">
+            <p>加载 ${section} 失败</p>
+            <p>${error.message}</p>
+            <button onclick="loadContent('${section}')">重试</button>
+        </div>
+    `;
 }
 
 // 增强的错误状态显示
@@ -281,36 +299,33 @@ function initCurrentPage() {
 // 修改flipPage函数
 function flipPage(direction) {
     if (isAnimating) return;
-    isAnimating = true;
     
-    const coverPage = document.querySelector('[data-section="cover"]');
-    const currentPageEl = pages[currentPage];
+    const newPage = direction === 'next' ? currentPage + 1 : currentPage - 1;
     
-    if (direction === 'next' && currentPage < pages.length - 1) {
-        // 处理从封面到part1的特殊过渡
-        if (currentPage === 0 && coverPage) {
-            coverPage.classList.add('flipped');
-            coverPage.style.zIndex = 1;
-        }
-        
-        currentPageEl.classList.add('flipping');
-        currentPage++;
-    } else if (direction === 'prev' && currentPage > 0) {
-        currentPage--;
-        const prevPage = pages[currentPage];
-        
-        // 处理回到封面的情况
-        if (currentPage === 0 && coverPage) {
-            coverPage.classList.remove('flipped');
-            coverPage.style.zIndex = 100;
-        } else {
-            prevPage.classList.remove('flipping');
-        }
-    } else {
-        isAnimating = false;
+    // 边界检查
+    if (newPage < 0 || newPage >= pages.length) {
         return;
     }
     
+    isAnimating = true;
+    
+    // 处理封面页的特殊逻辑
+    const coverPage = document.querySelector('[data-section="cover"]');
+    if (currentPage === 0 && direction === 'next' && coverPage) {
+        coverPage.classList.add('flipped');
+        coverPage.style.zIndex = 1;
+    } else if (newPage === 0 && direction === 'prev' && coverPage) {
+        coverPage.classList.remove('flipped');
+        coverPage.style.zIndex = 100;
+    }
+    
+    // 设置动画类
+    pages[currentPage].classList.add('flipping');
+    if (direction === 'prev') {
+        pages[newPage].classList.remove('flipping');
+    }
+    
+    currentPage = newPage;
     updateAfterFlip();
 }
 

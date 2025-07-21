@@ -576,3 +576,21 @@ html, body {
     height: 100%;
     overflow-x: hidden;
 }
+
+.flip-page {
+    transition: transform 0.6s ease-in-out, z-index 0.1s linear;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+/* 活动页面样式 */
+.flip-page.active {
+    transform: rotateY(0deg) !important;
+    z-index: 50;
+}
+
+/* 非活动页面样式 */
+.flip-page:not(.active):not([data-section="cover"]) {
+    transform: rotateY(180deg);
+    z-index: 10;
+}
