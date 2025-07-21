@@ -124,10 +124,16 @@ async function loadContent(sectionId) {
     if (!section) section = 'part1';
 
     const pageElement = document.querySelector(`.flip-page[data-section="${section}"]`);
-    if (!pageElement) return false;
+    if (!pageElement) {
+        console.error(`找不到页面元素: ${section}`);
+        return false;
+    }
 
     const pageContent = pageElement.querySelector('.page-content');
-    if (!pageContent) return false;
+    if (!pageContent) {
+        console.error(`找不到内容容器: ${section}`);
+        return false;
+    }
 
     try {
         // 显示加载状态
@@ -265,8 +271,8 @@ function initPages() {
         page.style.transform = isCover ? 'rotateY(0deg)' : 'rotateY(180deg)';
         page.style.zIndex = isCover ? 100 : pages.length - index + 10;
         
-        // 初始化part1为活动页
-        if (index === 1) { // part1是第一个内容页
+        // 初始化第一个非封面页为活动页
+        if (!isCover && index === 1) { // 修改这里
             page.classList.add('active');
             page.style.transform = 'rotateY(0deg)';
             page.style.zIndex = 50;
