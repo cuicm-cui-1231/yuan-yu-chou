@@ -119,75 +119,54 @@ function flipToPage(targetPage, callback) {
 // 修改loadContent函数，确保强制加载
 // 修改loadContent函数
 async function loadContent(sectionId) {
-    // 1. 确定要加载的章节
     let section = sectionId || window.location.hash.substring(1);
-    
-    // 2. 处理无效章节的情况
-    if (!section) {
-        console.warn('未指定章节，默认加载 part1');
-        section = 'part1';
-        window.location.hash = '#part1';
-    }
+    if (!section) section = 'part1';
 
-    // 3. 检查是否为有效章节
-    if (!sections.includes(section)) {
-        console.warn(`无效章节: ${section}，已跳过`);
-        return false;
-    }
-
-    // 4. 查找目标容器
     const pageElement = document.querySelector(`.flip-page[data-section="${section}"]`);
-    if (!pageElement) {
-        console.error(`未找到章节容器: ${section}`);
-        return false;
-    }
+    if (!pageElement) return false;
 
     const pageContent = pageElement.querySelector('.page-content');
-    if (!pageContent) {
-        console.error(`章节容器中缺少内容区域: ${section}`);
-        return false;
-    }
+    if (!pageContent) return false;
 
     try {
-        // 5. 显示加载状态
+        // 显示加载状态
         pageContent.innerHTML = '<div class="loading-spinner">加载中...</div>';
-
-        // 6. 获取内容（强制绕过缓存）
-        const response = await fetch(`./chapters/${section}.html?t=${Date.now()}`, {
-            cache: 'no-store'
-        });
-
-        // 7. 处理响应
-        if (!response.ok) {
-            if (response.status === 404) {
-                console.warn(`章节文件不存在: ${section}.html`);
-                showErrorState(section, '本章节内容暂未开放');
-            } else {
-                throw new Error(`HTTP错误! 状态码: ${response.status}`);
-            }
-            return false;
-        }
-
-        const html = await response.text();
         
-        // 8. 空内容检查
-        if (!html.trim()) {
-            console.warn(`章节内容为空: ${section}`);
-            showErrorState(section, '本章节内容为空');
-            return false;
+        // 尝试获取真实内容
+        let html;
+        try {
+            const response = await fetch(`./chapters/${section}.html?t=${Date.now()}`, {
+                cache: 'no-store',
+                mode: 'no-cors'
+            });
+            
+            if (!response.ok) throw new Error('HTTP错误');
+            html = await response.text();
+            
+            // 如果内容为空，使用备用内容
+            if (!html.trim()) {
+                throw new Error('内容为空');
+            }
+        } catch (fetchError) {
+            console.warn(`使用临时内容替代 ${section}`, fetchError);
+            html = `
+                <div class="chapter-content">
+                    <h2>${section}</h2>
+                    <p>本章节内容正在建设中...</p>
+                    <p>最后尝试加载时间: ${new Date().toLocaleString()}</p>
+                    <button onclick="loadContent('${section}')">重试加载</button>
+                </div>
+            `;
         }
-
-        // 9. 更新DOM
+        
+        // 更新DOM
         pageContent.innerHTML = html;
         updateActiveNav(section);
         
-        // 10. 预加载相邻章节
-        preloadAdjacentChapters(section);
-        
         return true;
     } catch (error) {
-        console.error(`加载 ${section} 失败:`, error);
-        showErrorState(section, '加载内容失败，请稍后再试');
+        console.error(`加载 ${section} 最终失败:`, error);
+        showErrorState(section, '加载内容失败: ' + error.message);
         return false;
     }
 }
