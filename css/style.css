@@ -1,596 +1,353 @@
-/* 基础样式 */
+/* ===== 基础样式重置 ===== */
 :root {
-    --primary-color: #FF6B88;
-    --secondary-color: #B0E0E6;
-    --accent-color: #FFA07A;
-    --text-color: #333;
-    --light-text: #666;
-    --bg-color: #FFF;
-    --section-bg: rgba(255, 255, 255, 0.9);
+  --primary-color: #FF6B88;
+  --secondary-color: #B0E0E6;
+  --accent-color: #FFA07A;
+  --text-color: #333;
+  --light-text: #666;
+  --bg-color: #FFF;
+  --section-bg: rgba(255, 255, 255, 0.9);
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  --transition-duration: 0.6s;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent; /* 移除移动端点击高亮 */
+}
+
+html {
+  scroll-behavior: smooth;
+  overscroll-behavior-y: contain;
+  height: 100%;
 }
 
 body {
-    font-family: 'Noto Sans SC', sans-serif;
-    line-height: 1.8;
-    color: var(--text-color);
-    margin: 0;
-    padding: 0;
-    background: linear-gradient(135deg, #FFD1DC, #B0E0E6);
-    background-attachment: fixed;
+  font-family: 'Noto Sans SC', sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background: linear-gradient(135deg, #FFD1DC, #B0E0E6);
+  background-attachment: fixed;
+  min-height: 100vh;
+  overflow-x: hidden;
+  touch-action: pan-y; /* 优化触摸滚动 */
 }
 
-/* 导航栏基础样式 */
-.main-nav {
-    position: fixed;
-    top: 0;
-    width: 100%;
-    background-color: var(--bg-color);
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-
-.nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* 封面基础样式 */
-.hero {
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    padding: 0 2rem;
-    position: relative;
-    color: white;
-}
-
-/* 内容区基础样式 */
+/* ===== 布局容器 ===== */
 .content-container {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 4rem 2rem;
-    background-color: var(--section-bg);
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-    margin-top: -50px;
-    position: relative;
-    z-index: 10;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem;
+  position: relative;
 }
 
-/* 页脚基础样式 */
-.main-footer {
-    text-align: center;
-    padding: 2rem;
-    color: var(--light-text);
-    background-color: var(--bg-color);
-    margin-top: 3rem;
-}
-/* 添加在现有CSS之后 */
-
-/* 章节样式 */
-.section {
-    margin-bottom: 4rem;
+/* ===== 翻书容器 ===== */
+.flip-book-container {
+  perspective: 1500px;
+  width: 100%;
+  max-width: 900px;
+  height: auto;
+  min-height: 500px;
+  margin: 2rem auto;
+  position: relative;
+  aspect-ratio: 3/4; /* 保持书本比例 */
 }
 
-.section-title {
-    font-family: 'Noto Serif SC', serif;
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--accent-color);
-    padding-bottom: 0.5rem;
-    margin-bottom: 2rem;
+.flip-book {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  touch-action: none; /* 禁用默认触摸行为 */
 }
 
-/* 故事/文章样式 */
+/* ===== 页面基础样式 ===== */
+.flip-page {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  background: white;
+  padding: 1.5rem;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  transition: 
+    transform var(--transition-duration) ease-in-out,
+    z-index 0.1s linear;
+  z-index: 1;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* 页面内容区域 */
+.page-content {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  padding: 1rem;
+  position: relative;
+  -webkit-overflow-scrolling: touch; /* iOS滚动优化 */
+}
+
+/* 封面特殊样式 */
+.flip-page[data-section="cover"] {
+  background: linear-gradient(135deg, #FFD1DC, #B0E0E6);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+/* ===== 页面状态控制 ===== */
+.flip-page.active {
+  transform: rotateY(0deg) !important;
+  z-index: 50;
+  pointer-events: auto;
+}
+
+.flip-page:not(.active) {
+  transform: rotateY(180deg);
+  z-index: 10;
+}
+
+.flip-page.flipping {
+  z-index: 60;
+}
+
+/* 封面翻转状态 */
+.flip-page[data-section="cover"].flipped {
+  transform: rotateY(-180deg);
+  z-index: 1;
+}
+
+/* ===== 导航控制区 ===== */
+.page-controls {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  z-index: 200;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 0.8rem 1.5rem;
+  border-radius: 50px;
+  box-shadow: 0 2px 10px var(--shadow-color);
+  backdrop-filter: blur(5px); /* 毛玻璃效果 */
+}
+
+.page-controls button {
+  padding: 0.7rem 1.3rem;
+  background: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.3s;
+  min-width: 90px;
+  touch-action: manipulation;
+}
+
+.page-controls button:hover:not(:disabled) {
+  background: #e05572;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px var(--shadow-color);
+}
+
+.page-controls button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.page-indicator {
+  font-family: 'Noto Serif SC', serif;
+  font-size: 1rem;
+  color: var(--light-text);
+  min-width: 60px;
+  text-align: center;
+}
+
+/* ===== 内容样式 ===== */
 .story {
-    margin-bottom: 3rem;
-    padding: 1.5rem;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+  margin-bottom: 1.5rem;
+  padding: 1.2rem;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  animation: fadeIn 0.5s ease-out;
+  font-size: clamp(1rem, 2vw, 1.2rem); /* 动态字体 */
 }
 
 .story-title {
-    color: var(--primary-color);
-    margin-bottom: 1rem;
-    font-family: 'Noto Serif SC', serif;
+  font-family: 'Noto Serif SC', serif;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid var(--accent-color);
+  font-size: clamp(1.3rem, 3vw, 1.8rem);
 }
 
-/* 诗歌样式 */
 .poem {
-    font-style: italic;
-    text-align: center;
-    margin: 2rem 0;
-    padding: 2rem;
-    background-color: rgba(255, 255, 255, 0.7);
-    border-radius: 5px;
-    border-left: 3px solid var(--accent-color);
-    font-family: 'Noto Serif SC', serif;
-    line-height: 2;
+  font-style: italic;
+  text-align: center;
+  margin: 1.5rem 0;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 5px;
+  border-left: 3px solid var(--accent-color);
+  font-family: 'Noto Serif SC', serif;
+  line-height: 1.8;
+  font-size: clamp(0.9rem, 2.5vw, 1.1rem);
 }
 
-/* 引用样式 */
-.blockquote {
-    border-left: 4px solid var(--accent-color);
-    padding-left: 1.5rem;
-    margin: 1.5rem 0;
-    color: var(--light-text);
-    font-style: italic;
+/* ===== 触摸交互优化 ===== */
+.flip-book::before,
+.flip-book::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 25%;
+  height: 100%;
+  z-index: 300;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-/* 响应式设计 */
-@media (max-width: 768px) {
-    .nav-links {
-        display: none;
-        position: absolute;
-        top: 100%;
-        left: 0;
-        width: 100%;
-        background-color: var(--bg-color);
-        flex-direction: column;
-        padding: 1rem 0;
-    }
-    
-    .nav-links.active {
-        display: flex;
-    }
-    
-    .nav-links li {
-        margin: 0;
-        padding: 0.5rem 1rem;
-    }
-    
-    .content-container {
-        padding: 2rem 1rem;
-        margin-top: -30px;
-    }
-    
-    .hero h1 {
-        font-size: 2.5rem;
-    }
-    
-    .subtitle {
-        font-size: 1.2rem;
-    }
+body.mobile .flip-book::before,
+body.mobile .flip-book::after {
+  opacity: 0.2;
 }
 
-/* 特殊排版容器 */
-.special-layout {
-    margin: 4rem 0;
+.flip-book::before { 
+  left: 0; 
+  background: linear-gradient(90deg, var(--primary-color), transparent); 
+}
+.flip-book::after { 
+  right: 0; 
+  background: linear-gradient(270deg, var(--primary-color), transparent); 
 }
 
-/* 对比容器样式 - 仅影响special-layout内的元素 */
-.special-layout .contrast-container {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 2rem;
-    margin: 0;
-}
-
-.special-layout .contrast-item {
-    padding: 1.5rem;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
-}
-
-.special-layout .left-item {
-    border-right: 1px solid #eee;
-}
-
-.special-layout .right-item {
-    border-left: 1px solid #eee;
-}
-
-/* 标题特殊样式 */
-.special-layout .left-item .story-title {
-    color: #FF6B88;
-    border-bottom: 2px solid #FF6B88;
-}
-
-.special-layout .right-item .story-title {
-    color: #5D9CEC;
-    border-bottom: 2px solid #5D9CEC;
-}
-
-/* 响应式设计 */
-@media (max-width: 768px) {
-    .special-layout .contrast-container {
-        grid-template-columns: 1fr;
-    }
-    
-    .special-layout .left-item {
-        border-right: none;
-        border-bottom: 1px solid #eee;
-    }
-    
-    .special-layout .right-item {
-        border-left: none;
-        border-top: 1px solid #eee;
-    }
-}
-
-/* 夜间模式适配 */
-body.dark-mode .special-layout .contrast-item {
-    background-color: rgba(50, 50, 50, 0.8);
-}
-
-/* 添加装饰性分隔线 */
-.special-layout {
-    position: relative;
-    padding: 3rem 0;
-}
-
-.special-layout::before,
-.special-layout::after {
-    content: "";
-    position: absolute;
-    left: 10%;
-    right: 10%;
-    height: 1px;
-    background: linear-gradient(to right, transparent, #FF6B88, #5D9CEC, transparent);
-}
-
-.special-layout::before {
-    top: 0;
-}
-
-.special-layout::after {
-    bottom: 0;
-}
-
-/* 添加背景色差 */
-.special-layout .contrast-container {
-    background-color: rgba(245, 245, 245, 0.5);
-    padding: 2rem;
-    border-radius: 12px;
-}
-
-body.dark-mode .special-layout .contrast-container {
-    background-color: rgba(30, 30, 30, 0.5);
-}
-
-/* 夜间模式样式 */
+/* ===== 夜间模式 ===== */
 body.dark-mode {
-    --text-color: #EEE;
-    --light-text: #AAA;
-    --bg-color: #222;
-    --section-bg: rgba(40, 40, 40, 0.9);
-    background: linear-gradient(135deg, #2a0a0a, #0a2a2a);
+  --text-color: #EEE;
+  --light-text: #AAA;
+  --bg-color: #222;
+  --section-bg: rgba(40, 40, 40, 0.9);
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  background: linear-gradient(135deg, #2a0a0a, #0a2a2a);
+}
+
+body.dark-mode .flip-page:not([data-section="cover"]) {
+  background: #333;
+  color: #EEE;
 }
 
 body.dark-mode .story,
 body.dark-mode .poem {
-    background-color: rgba(50, 50, 50, 0.8);
-    color: #EEE;
+  background: rgba(50, 50, 50, 0.8);
 }
 
-.dark-mode-toggle {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 50px;
-    height: 50px;
-    border-radius: 50%;
-    background-color: var(--bg-color);
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-/* 滚动导航样式 */
-.main-nav.scrolled {
-    background-color: rgba(255, 255, 255, 0.95);
-    -webkit-backdrop-filter: blur(5px); /* Safari 9+ */
-    backdrop-filter: blur(5px); /* 标准语法 */
-}
-
-body.dark-mode .main-nav.scrolled {
-    background-color: rgba(40, 40, 40, 0.95);
-    -webkit-backdrop-filter: blur(5px); /* Safari 9+ */
-    backdrop-filter: blur(5px); /* 标准语法 */
-}
-
-/* 过渡效果 */
-#content {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-#content.loaded {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* styles/main.css */
-.book-container {
-    perspective: 1500px;
-}
-
-.chapter {
-    position: relative;
-    transform-style: preserve-3d;
-    transition: transform 1s;
-    transform-origin: left center;
-}
-
-.chapter:hover {
-    transform: rotateY(-15deg);
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
-}
-
-/* styles/chapters.css */
-.polaroid {
-    background: white;
-    padding: 15px 15px 60px;
-    box-shadow: 0 3px 5px rgba(0,0,0,0.2);
-    transform: rotate(-5deg);
-    position: relative;
-    margin: 20px auto;
-    max-width: 250px;
-}
-
-.polaroid:after {
-    content: "";
-    position: absolute;
-    bottom: 15px;
-    left: 0;
-    right: 0;
-    height: 30px;
-    background: linear-gradient(transparent, white 70%);
-}
-
-@keyframes handwriting {
-    from { width: 0 }
-    to { width: 100% }
-}
-
-.handwriting {
-    overflow: hidden;
-    white-space: nowrap;
-    animation: handwriting 3s steps(40) forwards;
-    border-right: 2px solid #333; /* 光标效果 */
-}
-
-/* 翻书容器 */
-.flip-book {
-    width: 90%;
-    max-width: 800px;
-    height: 600px;
-    margin: 40px auto;
-    position: relative;
-    perspective: 1500px;
-    transform-style: preserve-3d;
-}
-
-
-/* 页面基础样式 */
-.flip-page {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background: white;
-    padding: 30px;
-    box-sizing: border-box;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-    transform-origin: left center;
-    transition: transform 0.6s ease-in-out, z-index 0.1s linear;
-    transform-style: preserve-3d;
-    backface-visibility: hidden; /* 关键修改 */
-    z-index: 1;
-}
-
-
-/* 封面和封底特殊样式 */
-.front-cover, .back-cover {
-    background: linear-gradient(135deg, #FFD1DC, #B0E0E6);
-    z-index: 10;
-}
-
-/* 当前活动页始终置顶 */
-.flip-page:not(.flipping) {
-    z-index: 10 !important;
-}
-
-/* 封面/封底特殊处理 */
-.front-cover, .back-cover {
-    z-index: 20;
-    background: linear-gradient(135deg, #FFD1DC, #B0E0E6);
-}
-
-/* 翻页动画 */
-.flip-page.flipping {
-    transform: rotateY(180deg);
-    z-index: 2;
-}
-
-/* 页面内容容器 */
-.page-content {
-    transform: scaleX(1); /* 确保内容不镜像 */
-    backface-visibility: visible;
-    width: 100%;
-    height: 100%;
-    position: relative;
-}
-
-/* 翻页按钮 */
-.page-controls {
-    position: fixed;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 100;
-    display: flex;
-    gap: 20px;
-}
-
-.page-controls button {
-    padding: 10px 20px;
-    background-color: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 50px;
-    cursor: pointer;
-    font-size: 16px;
-    transition: all 0.3s;
-}
-
-.page-controls button:hover {
-    background-color: #e05572;
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-/* 响应式设计 */
+/* ===== 响应式设计 ===== */
+/* 平板设备 */
 @media (max-width: 768px) {
-    .flip-book {
-        height: 400px;
-    }
-    
-    .flip-page {
-        padding: 15px;
-    }
+  .flip-book-container {
+    min-height: 70vh;
+    margin: 1rem auto;
+  }
+  
+  .flip-page {
+    padding: 1rem;
+  }
+  
+  .page-controls {
+    bottom: 1rem;
+    padding: 0.7rem 1.2rem;
+    gap: 1rem;
+  }
+  
+  .page-controls button {
+    padding: 0.6rem 1rem;
+    min-width: 80px;
+    font-size: 0.9rem;
+  }
 }
 
-.loading-spinner {
-    text-align: center;
-    padding: 2rem;
-    color: var(--light-text);
-    animation: pulse 1.5s infinite;
+/* 手机设备 */
+@media (max-width: 480px) {
+  .flip-book-container {
+    min-height: 65vh;
+    border-radius: 0;
+    margin: 0.5rem auto;
+  }
+  
+  .page-content {
+    padding: 0.5rem;
+  }
+  
+  .page-controls {
+    width: 90%;
+    justify-content: space-between;
+    bottom: 0.5rem;
+  }
+  
+  .page-controls button {
+    min-width: auto;
+    padding: 0.6rem 1rem;
+    flex: 1;
+  }
+  
+  .page-indicator {
+    display: none; /* 小屏幕隐藏页码 */
+  }
 }
 
-.error-state {
-    text-align: center;
-    padding: 2rem;
-    color: #d32f2f;
+/* 横屏模式 */
+@media (orientation: landscape) and (max-width: 900px) {
+  .flip-book-container {
+    max-width: 80vh;
+    min-height: 60vh;
+  }
+  
+  body.mobile .page-controls {
+    bottom: 0.5rem;
+    padding: 0.5rem;
+  }
 }
 
-.error-state button {
-    margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    background: var(--primary-color);
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
+/* ===== 动画效果 ===== */
 @keyframes pulse {
-    0% { opacity: 0.6; }
-    50% { opacity: 1; }
-    100% { opacity: 0.6; }
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
 }
 
-/* 确保内容基础可见性 */
-.flip-page .page-content {
-    display: block !important;
-    opacity: 1 !important;
-    visibility: visible !important;
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* 修复可能的内容隐藏 */
-.flip-book {
-    overflow: hidden !important;
+/* ===== 特殊设备优化 ===== */
+/* 折叠屏设备 */
+@media (max-width: 300px) {
+  .flip-book-container {
+    min-height: 50vh;
+  }
+  
+  .story, .poem {
+    padding: 0.8rem;
+  }
 }
 
-/* 临时调试边框（验证布局） */
-.flip-page {
-    outline: 1px solid rgba(255,0,0,0.3);
-}
-
-/* 添加在style.css末尾 */
-.book-container {
-    position: relative;
-    min-height: 700px; /* 确保有足够空间 */
-    margin: 0 auto;
-    width: 100%;
-}
-
-.page-content {
-    position: relative;
-    z-index: 1;
-    height: calc(100% - 40px); /* 留出边距 */
-    overflow-y: auto;
-}
-
-/* 封面页专属样式 */
-.flip-page[data-section="cover"] {
-    z-index: 100; /* 封面最高优先级 */
-    transform: rotateY(0deg);
-    transition: transform 1s ease-in-out;
-}
-
-/* 封面页翻转状态 */
-.flip-page[data-section="cover"].flipped {
-    transform: rotateY(-180deg);
-    z-index: 1; /* 翻过去后最低 */
-    pointer-events: none;
-}
-
-/* 内容页活动状态 */
-.flip-page.active:not([data-section="cover"]) {
-    z-index: 50; /* 内容页活动状态 */
-    transform: rotateY(0deg) !important;
-}
-
-/* 内容页非活动状态 */
-.flip-page:not(.active):not([data-section="cover"]) {
-    transform: rotateY(180deg);
-    z-index: 10; /* 常规内容页层级 */
-}
-
-/* 翻转状态的页面禁止交互 */
-.flip-page.flipping,
-.flip-page.flipped {
-    pointer-events: none;
-}
-
-/* 活动页面允许交互 */
-.flip-page.active {
-    pointer-events: auto;
-}
-
-.flip-page[data-section="part1"].flipped {
-    transform: rotateY(-180deg);
-    z-index: 1; /* 翻过去后最低 */
-    pointer-events: none;
-}
-
-/* 防止移动端滑动 */
-html, body {
-    overscroll-behavior-y: contain;
-    height: 100%;
-    overflow-x: hidden;
-}
-
-.flip-page {
-    transition: transform 0.6s ease-in-out, z-index 0.1s linear;
-    transform-style: preserve-3d;
-    backface-visibility: hidden;
-}
-
-/* 活动页面样式 */
-.flip-page.active {
-    transform: rotateY(0deg) !important;
-    z-index: 50;
-}
-
-/* 非活动页面样式 */
-.flip-page:not(.active):not([data-section="cover"]) {
-    transform: rotateY(180deg);
-    z-index: 10;
+/* 防止iOS橡皮筋效果 */
+@supports (-webkit-touch-callout: none) {
+  body {
+    overscroll-behavior-y: none;
+  }
 }
